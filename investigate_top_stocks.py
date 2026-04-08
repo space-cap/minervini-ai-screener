@@ -71,7 +71,7 @@ def generate_ai_report(ticker, name, score, stage, articles):
     try:
         if use_openai:
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a professional financial analyst."},
                     {"role": "user", "content": prompt}
