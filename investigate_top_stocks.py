@@ -13,6 +13,8 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
+TOP_N_ANALYZE = int(os.getenv("TOP_N_ANALYZE", 5))
+
 use_openai = False
 if OPENAI_API_KEY:
     use_openai = True
@@ -97,8 +99,8 @@ def main():
     df = pd.read_csv('wave_transition_analysis_results.csv')
     df['Ticker'] = df['Ticker'].astype(str).str.zfill(6)
     
-    # 상위 5개 종목 대상
-    top_stocks = df.head(5)
+    # 상위 N개 종목 대상
+    top_stocks = df.head(TOP_N_ANALYZE)
     
     for idx, row in top_stocks.iterrows():
         ticker = row['Ticker']
