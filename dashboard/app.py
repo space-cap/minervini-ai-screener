@@ -21,10 +21,10 @@ def main():
     if menu == "투자 요약 대시보드":
         st.subheader("🔥 오늘의 Top 추천 종목")
         
-        # 상위 3종목 하이라이트
-        top3 = results_df.head(3)
-        cols = st.columns(3)
-        for i, (idx, row) in enumerate(top3.iterrows()):
+        # 상위 5종목 하이라이트
+        top_stocks_disp = results_df.head(5)
+        cols = st.columns(5)
+        for i, (idx, row) in enumerate(top_stocks_disp.iterrows()):
             with cols[i]:
                 st.metric(label=f"🏆 {i+1}위: {row['Name']}", value=f"{int(row['Total_Score'])}점", delta=row['Stage'])
                 st.caption(f"종가: {row['Close']:,.0f}원")
@@ -65,9 +65,9 @@ def main():
         st.info("파동 분석 상위 종목에 대한 최신 뉴스 요약 및 AI 투자 의견입니다.")
         
         # 상위 종목 목록
-        top_stocks = results_df.head(3)
-        selected_ai_stock = st.selectbox("분석 리포트가 생성된 종목:", top_stocks['Name'].tolist())
-        ticker = top_stocks[top_stocks['Name'] == selected_ai_stock]['Ticker'].iloc[0]
+        top_stocks_ai = results_df.head(5)
+        selected_ai_stock = st.selectbox("분석 리포트가 생성된 종목:", top_stocks_ai['Name'].tolist())
+        ticker = top_stocks_ai[top_stocks_ai['Name'] == selected_ai_stock]['Ticker'].iloc[0]
         
         report = read_markdown_report(ticker)
         with st.expander(f"{selected_ai_stock} AI 리포트 보기", expanded=True):

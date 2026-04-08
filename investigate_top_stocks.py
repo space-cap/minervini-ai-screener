@@ -97,8 +97,8 @@ def main():
     df = pd.read_csv('wave_transition_analysis_results.csv')
     df['Ticker'] = df['Ticker'].astype(str).str.zfill(6)
     
-    # 상위 3개 종목 대상
-    top_stocks = df.head(3)
+    # 상위 5개 종목 대상
+    top_stocks = df.head(5)
     
     for idx, row in top_stocks.iterrows():
         ticker = row['Ticker']
