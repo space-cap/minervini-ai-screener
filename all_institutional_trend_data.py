@@ -3,6 +3,12 @@ import requests
 from tqdm import tqdm
 import time
 import os
+import warnings
+from dotenv import load_dotenv
+
+warnings.filterwarnings('ignore')
+load_dotenv()
+DATA_SOURCE = os.getenv("DATA_SOURCE", "NAVER")
 
 def fetch_investor_trend_naver(ticker, pages=10):
     url = f'https://finance.naver.com/item/frgn.naver?code={ticker}'
@@ -60,6 +66,46 @@ def fetch_investor_trend_naver(ticker, pages=10):
     res_df = res_df.sort_values('Date', ascending=True).reset_index(drop=True)
     return res_df
 
+def fetch_investor_trend_pykrx(ticker, days=240):
+    try:
+        from pykrx import stock
+        from datetime import datetime, timedelta
+        end_date = datetime.today()
+        start_date = end_date - timedelta(days=days*1.5)
+        
+        # pykrx 순매수 동향 (기관합계, 외국인)
+        df = stock.get_market_trading_volume_by_date(start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"), ticker, on="순매수")
+        if df.empty:
+            return pd.DataFrame()
+            
+        df = df.reset_index()
+        
+        # 리네임
+        rename_dict = {
+            '날짜': 'Date',
+            '기관합계': 'Institution_Net',
+            '외국인': 'Foreigner_Net'
+        }
+        df = df.rename(columns=rename_dict)
+        
+        for required in ['Date', 'Institution_Net', 'Foreigner_Net']:
+            if required not in df.columns:
+                df[required] = 0
+                
+        res_df = df[['Date', 'Institution_Net', 'Foreigner_Net']].copy()
+        res_df['Ticker'] = ticker
+        
+        res_df['Date'] = pd.to_datetime(res_df['Date'], errors='coerce')
+        res_df = res_df.dropna(subset=['Date'])
+        res_df = res_df.sort_values('Date', ascending=True).reset_index(drop=True)
+        return res_df.tail(days)
+    except ImportError:
+        print("pykrx가 설치되어 있지 않습니다.")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"pykrx 에러 ({ticker}): {e}")
+        return pd.DataFrame()
+
 def main():
     print("기관/외국인 수급 데이터 수집 시작...")
     if not os.path.exists('korean_stocks_list.csv'):
@@ -69,9 +115,16 @@ def main():
     stocks = pd.read_csv('korean_stocks_list.csv', dtype={'ticker': str})
     
     all_data = []
+    print(f"[{DATA_SOURCE} 모드] 데이터 수집을 시작합니다.")
     for idx, row in tqdm(stocks.iterrows(), total=len(stocks)):
         ticker = row['ticker'].strip().zfill(6)
-        df = fetch_investor_trend_naver(ticker, pages=13)
+        
+        if DATA_SOURCE == 'PYKRX':
+            df = fetch_investor_trend_pykrx(ticker, days=240)
+            time.sleep(0.5)
+        else:
+            df = fetch_investor_trend_naver(ticker, pages=13)
+            
         if not df.empty:
             all_data.append(df)
             
